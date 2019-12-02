@@ -50,6 +50,7 @@ def gradient_descent(f, x0, lr=0.01, num_step=100):
 def f(x):
     return x[0] ** 2 + x[1] ** 2
 
+
 if __name__ == "__main__":
     x0 = np.array([-3.0, 4.0])
     print(gradient_descent(f, x0, lr=0.1))

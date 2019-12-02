@@ -48,6 +48,7 @@ class TwoLayerNet:
         acc = np.sum(p == ans) / float(x.shape[0])
         return acc
 
+
 if __name__ == "__main__":
     net = TwoLayerNet(784, 100, 10)
     x = np.random.rand(100, 784)  # Dummy input data

@@ -17,7 +17,7 @@ def cross_entropy(x, t):
 
     if t.size == x.size:
         t = t.argmax(axis=1)
-    
+
     ep = 1e-7
     batch_size = x.shape[0]
     return -np.sum(np.log(x[np.arange(batch_size), t] + ep)) / batch_size

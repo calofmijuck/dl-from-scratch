@@ -21,6 +21,7 @@ class SimpleNet:
 
         return loss
 
+
 if __name__ == "__main__":
     net = SimpleNet()
     print(net.W)
