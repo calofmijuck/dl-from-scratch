@@ -15,6 +15,11 @@ def relu(x):
 
 
 def softmax(x):
-    c = np.max(x)  # Guard for overflow
-    e = np.exp(x - c)
-    return e / np.sum(e)
+    if x.ndim == 2:
+        x = x.T
+        x = x - np.max(x, axis=0)
+        y = np.exp(x) / np.sum(np.exp(x), axis=0)
+        return y.T 
+
+    x = x - np.max(x)
+    return np.exp(x) / np.sum(np.exp(x))
