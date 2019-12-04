@@ -30,7 +30,7 @@ class TwoLayerNet:
 
     def loss(self, x, t):
         y = self.predict(x)
-        return cross_entropy(y, t)
+        return self.lastLayer.forward(y, t)
 
     def numerical_gradient(self, x, t):
         f = lambda W: self.loss(x, t)
