@@ -10,12 +10,9 @@ class MultiLayerNet:
     """
     Parameters
     ------------------------
-    input_size
-    hidden_size_list : list of sizes of hidden layers
-    output_size
-    activation : activation function
-    weight_init_std
-    weight_decay_lambda
+    use_dropout
+    dropout_ratio
+    use_batchnorm
     """
 
     def __init__(
@@ -26,12 +23,17 @@ class MultiLayerNet:
         activation="relu",
         weight_init_std="relu",
         weight_decay_lambda=0,
+        use_dropout=False,
+        dropout_ratio=0.5,
+        use_batchnorm=False,
     ):
         self.input_size = input_size
         self.hidden_size_list = hidden_size_list
         self.hidden_layer_num = len(hidden_size_list)
         self.output_size = output_size
         self.weight_decay_lambda = weight_decay_lambda
+        self.use_dropout = use_dropout
+        self.use_batchnorm = use_batchnorm
         self.params = {}
 
         # Weight initialization
@@ -45,6 +47,14 @@ class MultiLayerNet:
             self.layers["Affine" + str(idx)] = Affine(
                 self.params["W" + str(idx)], self.params["b" + str(idx)]
             )
+
+            if self.use_batchnorm:
+                self.params["gamma" + str(idx)] = np.ones(hidden_size_list[idx - 1])
+                self.params["beta" + str(idx)] = np.zeros(hidden_size_list[idx - 1])
+                self.layers["BatchNorm" + str(idx)] = BatchNormalization(
+                    self.params["gamma" + str(idx)], self.params["beta" + str(idx)]
+                )
+
             self.layers["Activation_function" + str(idx)] = activation_layer[activation]
 
         idx = self.hidden_layer_num + 1
@@ -106,4 +116,9 @@ class MultiLayerNet:
                 + self.weight_decay_lambda * self.layers["Affine" + str(idx)].W
             )
             grads["b" + str(idx)] = self.layers["Affine" + str(idx)].db
+
+            if self.use_batchnorm and idx != self.hidden_layer_num + 1:
+                grads["gamma" + str(idx)] = self.layers["BatchNorm" + str(idx)].dgamma
+                grads["beta" + str(idx)] = self.layers["BatchNorm" + str(idx)].dbeta
+
         return grads
