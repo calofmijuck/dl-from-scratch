@@ -72,7 +72,7 @@ class MultiLayerNet:
         for idx in range(1, len(size_list)):
             if val in ("relu", "he"):  # Relu / He initialization
                 scale = np.sqrt(2.0 / size_list[idx - 1])
-            elif val in ("sigmoid", "xavier",):  # Sigmoid / Xavier initialization
+            elif val in ("sigmoid", "xavier"):  # Sigmoid / Xavier initialization
                 scale = np.sqrt(1.0 / size_list[idx - 1])
             self.params["W" + str(idx)] = scale * np.random.randn(
                 size_list[idx - 1], size_list[idx]
