@@ -47,7 +47,7 @@ class MultiLayerNet:
         self.__init_weight(weight_init_std)
 
         # Create layers
-        activation_layer = {"sigmoid": Sigmoid(), "relu": Relu()}
+        activation_layer = {"sigmoid": Sigmoid, "relu": Relu}
         self.layers = OrderedDict()
 
         for idx in range(1, self.hidden_layer_num + 1):
@@ -62,7 +62,7 @@ class MultiLayerNet:
                     self.params["gamma" + str(idx)], self.params["beta" + str(idx)]
                 )
 
-            self.layers["Activation_function" + str(idx)] = activation_layer[activation]
+            self.layers["Activation_function" + str(idx)] = activation_layer[activation]()
 
             if self.use_dropout:
                 self.layers["Dropout" + str(idx)] = Dropout(dropout_ratio)
@@ -113,7 +113,10 @@ class MultiLayerNet:
         return np.sum(y == t) / float(x.shape[0])
 
     def gradient(self, x, t):
+        # Forward
         self.loss(x, t, train_flg=True)
+
+        # Backward
         dout = 1
         dout = self.last_layer.backward(dout)
 
@@ -126,7 +129,7 @@ class MultiLayerNet:
         for idx in range(1, self.hidden_layer_num + 2):
             grads["W" + str(idx)] = (
                 self.layers["Affine" + str(idx)].dW
-                + self.weight_decay_lambda * self.layers["Affine" + str(idx)].W
+                + self.weight_decay_lambda * self.params["W" + str(idx)]
             )
             grads["b" + str(idx)] = self.layers["Affine" + str(idx)].db
 
