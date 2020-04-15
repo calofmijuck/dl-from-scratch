@@ -84,3 +84,11 @@ class Adam:
             self.m[key] += (1 - self.beta1) * (grads[key] - self.m[key])
             self.v[key] += (1 - self.beta2) * (grads[key] ** 2 - self.v[key])
             params[key] -= lr_t * self.m[key] / (np.sqrt(self.v[key]) + 1e-7)
+
+
+class Nesterov:
+    # Study Later
+    def __init__(self, lr=0.01, momentum=0.9):
+        self.lr = lr
+        self.momentum = momentum
+        self.v = None
