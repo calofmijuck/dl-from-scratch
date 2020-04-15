@@ -144,11 +144,11 @@ class BatchNormalization:
         return dx.reshape(*self.input_shape)
 
     def __backward(self, dout):
-        dbeta = dout.sum(axis =0)
+        dbeta = dout.sum(axis=0)
         dgamma = np.sum(self.xn * dout, axis=0)
         dxn = self.gamma * dout
         dxc = dxn / self.std
-        dstd = -np.sum((dxn * self.xc) / (self.std * self.std), axis = 0)
+        dstd = -np.sum((dxn * self.xc) / (self.std * self.std), axis=0)
         dvar = 0.5 * dstd / self.std
         dxc += (2.0 / self.batch_size) * self.xc * dvar
         dmu = np.sum(dxc, axis=0)
@@ -157,3 +157,17 @@ class BatchNormalization:
         self.dgamma = dgamma
         self.dbeta = dbeta
         return dx
+
+
+class Dropout:
+    def __init__(self, dropout_ratio=0.5):
+        self.dropout_ratio = dropout_ratio
+        self.mask = None
+
+    def forward(self, x, train_flg=True):
+        if train_flg:
+            self.mask = np.random.rand(*x.shape) > self.dropout_ratio
+            return x * self.mask
+        else:
+            return x
+

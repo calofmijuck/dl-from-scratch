@@ -3,7 +3,7 @@ import sys, os
 sys.path.append(os.pardir)
 import numpy as np
 from collections import OrderedDict
-from common.layers import Affine, Relu, Sigmoid, BatchNormalization, SoftmaxLoss
+from common.layers import Affine, Relu, Sigmoid, BatchNormalization, SoftmaxLoss, Dropout
 
 
 class MultiLayerNet:
@@ -57,6 +57,9 @@ class MultiLayerNet:
 
             self.layers["Activation_function" + str(idx)] = activation_layer[activation]
 
+            if self.use_dropout:
+                self.layers['Dropout' + str(idx)] = Dropout(dropout_ratio)
+
         idx = self.hidden_layer_num + 1
         self.layers["Affine" + str(idx)] = Affine(
             self.params["W" + str(idx)], self.params["b" + str(idx)]
@@ -79,9 +82,12 @@ class MultiLayerNet:
             )
             self.params["b" + str(idx)] = np.zeros(size_list[idx])
 
-    def predict(self, x):
-        for layer in self.layers.values():
-            x = layer.forward(x)
+    def predict(self, x, train_flg=False):
+        for key, layer in self.layers.items():
+            if "Dropout" in key or "BatchNorm" in key:
+                x = layer.forward(x, train_flg)
+            else:
+                x = layer.forward(x)
         return x
 
     def loss(self, x, t):
