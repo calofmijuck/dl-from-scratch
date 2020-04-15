@@ -171,3 +171,5 @@ class Dropout:
         else:
             return x
 
+    def backward(self, dout):
+        return dout * self.mask

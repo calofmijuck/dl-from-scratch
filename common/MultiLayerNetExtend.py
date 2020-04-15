@@ -3,7 +3,14 @@ import sys, os
 sys.path.append(os.pardir)
 import numpy as np
 from collections import OrderedDict
-from common.layers import Affine, Relu, Sigmoid, BatchNormalization, SoftmaxLoss, Dropout
+from common.layers import (
+    Affine,
+    Relu,
+    Sigmoid,
+    BatchNormalization,
+    SoftmaxLoss,
+    Dropout,
+)
 
 
 class MultiLayerNet:
@@ -58,7 +65,7 @@ class MultiLayerNet:
             self.layers["Activation_function" + str(idx)] = activation_layer[activation]
 
             if self.use_dropout:
-                self.layers['Dropout' + str(idx)] = Dropout(dropout_ratio)
+                self.layers["Dropout" + str(idx)] = Dropout(dropout_ratio)
 
         idx = self.hidden_layer_num + 1
         self.layers["Affine" + str(idx)] = Affine(
@@ -90,8 +97,8 @@ class MultiLayerNet:
                 x = layer.forward(x)
         return x
 
-    def loss(self, x, t):
-        y = self.predict(x)
+    def loss(self, x, t, train_flg=False):
+        y = self.predict(x, train_flg)
         weight_decay = 0
         for idx in range(1, self.hidden_layer_num + 2):
             W = self.params["W" + str(idx)]
@@ -99,14 +106,14 @@ class MultiLayerNet:
         return self.last_layer.forward(y, t) + weight_decay
 
     def accuracy(self, x, t):
-        y = self.predict(x)
+        y = self.predict(x, train_flg=False)
         y = np.argmax(y, axis=1)
         if t.ndim != 1:
             t = np.argmax(t, axis=1)
         return np.sum(y == t) / float(x.shape[0])
 
     def gradient(self, x, t):
-        self.loss(x, t)
+        self.loss(x, t, train_flg=True)
         dout = 1
         dout = self.last_layer.backward(dout)
 
