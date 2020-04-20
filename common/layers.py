@@ -4,7 +4,7 @@ sys.path.append(os.pardir)
 import numpy as np
 from ch03.activation import softmax
 from ch04.loss import cross_entropy
-from util import im2col
+from util import im2col, col2im
 
 
 class Relu:
@@ -183,14 +183,62 @@ class Convolution:
         self.stride = stride
         self.pad = pad
 
+        # Data itself is unnecessary
+        # self.x = None
+        self.shape = None
+        self.col = None
+        self.col_W = None
+
+        self.dW = None
+        self.db = None
+
     def forward(self, x):
         FN, C, FH, FW = self.W.shape
         N, C, H, W = x.shape
+        self.shape = x.shape
+        # self.x = x
+
+        assert (H + 2 * self.pad - FH) % self.stride == 0
+        assert (W + 2 * self.pad - FW) % self.stride == 0
+
         out_h = 1 + (H + 2 * self.pad - FH) // self.stride
         out_w = 1 + (W + 2 * self.pad - FW) // self.stride
 
+        # Flatten input data, dimension will be (N * out_h * out_w, C * FH * FW)
         col = im2col(x, FH, FW, self.stride, self.pad)
+
+        # Reshape the filter to have dimension (C * FH * FW, FN)
         col_W = self.W.reshape(FN, -1).T
 
+        self.col = col
+        self.col_W = col_W
+
+        # Convolution and add bias Y = X * W + B
         out = np.dot(col, col_W) + self.b
+
+        # Axis order should be (N, C, out_h, out_w)
         return out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2)
+
+    def backward(self, dout):
+        # Backprop is similar to that of Affine layer
+
+        FN, C, FH, FW = self.W.shape
+
+        # Axis order should be (N, out_h, out_w, C) and reshape it
+        # dL/dY should have dimension (N * out_h * out_w, FN)
+        dout = dout.transpose(0, 2, 3, 1).reshape(-1, FN)
+
+        self.db = np.sum(dout, axis=0)
+
+        # dL/dW = X^T * dL/dY
+        self.dW = np.dot(self.col.T, dout)
+
+        # In forward, `col_W = self.W.reshape(FN, -1).T` was done 
+        # So transpose dW and reshape it to the original filter size
+        self.dW = self.dW.transpose(1, 0).reshape(FN, C, FH, FW)
+
+        # dL/dX = dL/dY * W^T
+        dcol = np.dot(dout, self.col_W.T)
+
+        # Pack the 2d array into image and return
+        return col2im(dcol, self.shape, FH, FW, self.stride, self.pad)
