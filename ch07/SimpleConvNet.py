@@ -28,7 +28,7 @@ class SimpleConvNet:
         input_size = input_dim[1]
         conv_output_size = (
             input_size - filter_size + 2 * filter_pad
-        ) / filter_stride + 1
+        ) // filter_stride + 1
         pool_output_size = filter_num * conv_output_size * conv_output_size // 4
 
         # Initialize parameters
@@ -68,7 +68,7 @@ class SimpleConvNet:
         return self.last_layer.forward(y, t)
 
     def accuracy(self, x, t, batch_size=100):
-        if t.nidm != 1:
+        if t.ndim != 1:
             t = np.argmax(t, axis=1)
 
         acc = 0

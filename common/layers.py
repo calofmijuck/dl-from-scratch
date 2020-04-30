@@ -4,7 +4,7 @@ sys.path.append(os.pardir)
 import numpy as np
 from ch03.activation import softmax
 from ch04.loss import cross_entropy
-from util import im2col, col2im
+from .util import im2col, col2im
 
 
 class Relu:
