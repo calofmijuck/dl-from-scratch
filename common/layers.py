@@ -233,7 +233,7 @@ class Convolution:
         # dL/dW = X^T * dL/dY
         self.dW = np.dot(self.col.T, dout)
 
-        # In forward, `col_W = self.W.reshape(FN, -1).T` was done 
+        # In forward, `col_W = self.W.reshape(FN, -1).T` was done
         # So transpose dW and reshape it to the original filter size
         self.dW = self.dW.transpose(1, 0).reshape(FN, C, FH, FW)
 
@@ -242,3 +242,47 @@ class Convolution:
 
         # Pack the 2d array into image and return
         return col2im(dcol, self.shape, FH, FW, self.stride, self.pad)
+
+
+class Pooling:
+    def __init__(self, pool_h, pool_w, stride=1, pad=0):
+        self.pool_h = pool_h
+        self.pool_w = pool_w
+        self.stride = stride
+        self.pad = pad
+
+        # self.x = None
+        self.shape = None
+        self.arg_max = None
+
+    def forward(self, x):
+        self.shape = x.shape
+
+        N, C, H, W = x.shape
+        out_h = 1 + (H - self.pool_h) // self.stride
+        out_w = 1 + (W - self.pool_w) // self.stride
+
+        col = im2col(x, self.pool_h, self.pool_w, self.stride, self.pad)
+        col = col.reshape(-1, self.pool_h * self.pool_w)
+
+        # Store argmax and calculate max
+        self.arg_max = np.argmax(col, axis=1)
+        out = np.max(col, axis=1)
+
+        # Shape into (N, C, out_h, out_w)
+        out = out.reshape(N, out_h, out_w, C).transpose(0, 3, 1, 2)
+
+        return out
+
+    def backward(self, dout):
+        dout = dout.transpose(0, 2, 3, 1)
+
+        pool_size = self.pool_h * self.pool_w
+        dmax = np.zeros((dout.size, pool_size))
+        dmax[np.arange(self.arg_max.size), self.arg_max.flatten()] = dout.flatten()
+        dmax = dmax.reshape(dout.shape + (pool_size,))
+
+        dcol = dmax.reshape(dmax.shape[0] * dmax.shape[1] * dmax.shape[2], -1)
+        dx = col2im(dcol, self.shape, self.pool_h, self.pool_w, self.stride, self.pad)
+
+        return dx
