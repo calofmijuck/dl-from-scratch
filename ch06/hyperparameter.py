@@ -4,7 +4,7 @@ sys.path.append(os.pardir)
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset.mnist import load_mnist
-from common.MultiLayerNetExtend import MultiLayerNet
+from common.multi_layer_net_extend import MultiLayerNet
 from common.util import shuffle_dataset
 from common.trainer import Trainer
 

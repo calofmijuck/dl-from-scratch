@@ -5,7 +5,7 @@ sys.path.append(os.pardir)
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset.mnist import load_mnist
-from SimpleConvNet import SimpleConvNet
+from simple_conv_net import SimpleConvNet
 from common.trainer import Trainer
 
 (x_train, t_train), (x_test, t_test) = load_mnist(flatten=False)
