@@ -1,8 +1,11 @@
 import sys, os
 
 sys.path.append(os.pardir)
+
 import numpy as np
 from common.optimizer import *
+from tqdm import tqdm
+
 
 # Class that trains the network
 class Trainer:
@@ -42,10 +45,7 @@ class Trainer:
         self.optimizer = optimizer_class_dict[optimizer.lower()](**optimizer_param)
 
         self.train_size = x_train.shape[0]
-        self.iter_per_epoch = max(self.train_size / mini_batch_size, 1)
-        self.max_iter = int(epochs * self.iter_per_epoch)
-        self.current_iter = 0
-        self.current_epoch = 0
+        self.iter_per_epoch = max(self.train_size // mini_batch_size, 1)
 
         self.train_loss_list = []
         self.train_acc_list = []
@@ -63,41 +63,33 @@ class Trainer:
 
         loss = self.network.loss(x_batch, t_batch)
         self.train_loss_list.append(loss)
+
+    def run_epoch(self, epoch):
+        print("--- epoch {} ---".format(epoch))
+        for _ in tqdm(range(self.iter_per_epoch)):
+            self.train_step()
+
+        x_train_sample, t_train_sample = self.x_train, self.t_train
+        x_test_sample, t_test_sample = self.x_test, self.t_test
+
+        # Number of samples to evaluate per epoch
+        if not self.evaluate_sample_per_epoch is None:
+            t = self.evaluate_sample_per_epoch
+            x_train_sample, t_train_sample = self.x_train[:t], self.t_train[:t]
+            x_test_sample, t_test_sample = self.x_test[:t], self.t_test[:t]
+
+        # Calculate accuracy for train data and test data
+        train_acc = self.network.accuracy(x_train_sample, t_train_sample)
+        test_acc = self.network.accuracy(x_test_sample, t_test_sample)
+        self.train_acc_list.append(train_acc)
+        self.test_acc_list.append(test_acc)
+
         if self.verbose:
-            print("train loss: " + str(loss))
-
-        if self.current_iter % self.iter_per_epoch == 0:
-            self.current_epoch += 1
-            x_train_sample, t_train_sample = self.x_train, self.t_train
-            x_test_sample, t_test_sample = self.x_test, self.t_test
-
-            # Number of samples to evaluate per epoch
-            if not self.evaluate_sample_per_epoch is None:
-                t = self.evaluate_sample_per_epoch
-                x_train_sample, t_train_sample = self.x_train[:t], self.t_train[:t]
-                x_test_sample, t_test_sample = self.x_test[:t], self.t_test[:t]
-
-            # Calculate accuracy for train data and test data
-            train_acc = self.network.accuracy(x_train_sample, t_train_sample)
-            test_acc = self.network.accuracy(x_test_sample, t_test_sample)
-            self.train_acc_list.append(train_acc)
-            self.test_acc_list.append(test_acc)
-
-            if self.verbose:
-                print(
-                    "--- epoch "
-                    + str(self.current_epoch)
-                    + " - train acc: "
-                    + str(train_acc)
-                    + ", test acc: "
-                    + str(test_acc)
-                    + "---"
-                )
-        self.current_iter += 1
+            print("train acc: {:.5f}, test acc: {:.5f}".format(train_acc, test_acc))
 
     def train(self):
-        for i in range(self.max_iter):
-            self.train_step()
+        for epoch in range(1, self.epochs + 1):
+            self.run_epoch(epoch)
 
         test_acc = self.network.accuracy(self.x_test, self.t_test)
 
