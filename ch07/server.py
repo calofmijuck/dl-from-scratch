@@ -1,14 +1,34 @@
-
 import argparse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import numpy as np
 from simple_conv_net import SimpleConvNet
+import cv2
+import base64
+import urllib
+
+WIDTH, HEIGHT = 28, 28
+DIMENSION = (WIDTH, HEIGHT)
+
+
+def base64ToArray(uri):
+    encoded_data = uri.split(',')[1]
+    data = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
+    img = cv2.imdecode(data, cv2.IMREAD_COLOR)
+    grayscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    resized = cv2.resize(grayscale, DIMENSION, interpolation=cv2.INTER_LINEAR)
+
+    array = (255 - resized) / 255.0
+    return array
+
 
 class S(BaseHTTPRequestHandler):
     def _set_headers(self):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "http://www.zxcvber.com")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST")
         self.end_headers()
 
     def _html(self, message):
@@ -26,17 +46,19 @@ class S(BaseHTTPRequestHandler):
         self._set_headers()
 
     def do_POST(self):
-        # Doesn't do anything with posted data
         content_length = int(self.headers["Content-Length"])
         data_string = self.rfile.read(content_length)
 
-        data = json.loads(data_string)
-        ans = int(predict(data['data']))
-
+        data = urllib.parse.unquote_to_bytes(data_string).decode("utf-8")
+        data_arr = base64ToArray(data)
+        ans = int(predict(data_arr))
         result = json.dumps({"ans": ans})
 
         self._set_headers()
         self.wfile.write(bytes(result, 'utf-8'))
+
+    def do_OPTIONS(self):
+        self._set_headers()
 
 
 def run(server_class=HTTPServer, handler_class=S, addr="localhost", port=8000):
@@ -46,10 +68,12 @@ def run(server_class=HTTPServer, handler_class=S, addr="localhost", port=8000):
     print(f"Starting httpd server on {addr}:{port}")
     httpd.serve_forever()
 
+
 def init_model():
     global network
     network = SimpleConvNet()
     network.load_params("params.pkl")
+
 
 def predict(x):
     x = np.array(x).reshape(1, 1, 28, 28)
